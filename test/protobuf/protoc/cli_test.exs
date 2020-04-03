@@ -20,7 +20,9 @@ defmodule Protobuf.Protoc.CLITest do
     assert %{global_type_mapping: %{"file1" => %{}, "file2" => %{}}} = find_types(ctx, descs)
   end
 
-  test "find_types_in_proto/1 merge message and enum" do
+  test "find_types_in_proto/2 merge message and enum" do
+    ctx = %Context{}
+
     desc =
       FileDescriptorProto.new(
         name: "file1",
@@ -30,10 +32,12 @@ defmodule Protobuf.Protoc.CLITest do
       )
 
     assert %{".pkg.Msg" => %{type_name: "Pkg.Msg"}, ".pkg.Enum" => %{type_name: "Pkg.Enum"}} =
-             find_types_in_proto(desc)
+             find_types_in_proto(ctx, desc)
   end
 
-  test "find_types_in_proto/1 have nested message types" do
+  test "find_types_in_proto/2 have nested message types" do
+    ctx = %Context{}
+
     desc =
       FileDescriptorProto.new(
         name: "file1",
@@ -51,10 +55,12 @@ defmodule Protobuf.Protoc.CLITest do
              ".pkg.Msg" => %{type_name: "Pkg.Msg"},
              ".pkg.Msg.NestedMsg" => %{type_name: "Pkg.Msg.NestedMsg"},
              ".pkg.Msg.NestedEnumMsg" => %{type_name: "Pkg.Msg.NestedEnumMsg"}
-           } = find_types_in_proto(desc)
+           } = find_types_in_proto(ctx, desc)
   end
 
-  test "find_types_in_proto/1 have deeper nested message types" do
+  test "find_types_in_proto/2 have deeper nested message types" do
+    ctx = %Context{}
+
     desc =
       FileDescriptorProto.new(
         name: "file1",
@@ -76,10 +82,11 @@ defmodule Protobuf.Protoc.CLITest do
              ".pkg.Msg" => %{type_name: "Pkg.Msg"},
              ".pkg.Msg.NestedMsg" => %{type_name: "Pkg.Msg.NestedMsg"},
              ".pkg.Msg.NestedMsg.NestedMsg2" => %{type_name: "Pkg.Msg.NestedMsg.NestedMsg2"}
-           } = find_types_in_proto(desc)
+           } = find_types_in_proto(ctx, desc)
   end
 
-  test "find_types_in_proto/1 supports elixir_module_prefix" do
+  test "find_types_in_proto/2 supports elixir_module_prefix" do
+    ctx = %Context{}
     opts = Google.Protobuf.FileOptions.new()
     custom_opts = Elixirpb.FileOptions.new(module_prefix: "FooBar.Prefix")
 
@@ -98,6 +105,6 @@ defmodule Protobuf.Protoc.CLITest do
     assert %{
              ".pkg.Msg" => %{type_name: "FooBar.Prefix.Msg"},
              ".pkg.Enum" => %{type_name: "FooBar.Prefix.Enum"}
-           } = find_types_in_proto(desc)
+           } = find_types_in_proto(ctx, desc)
   end
 end

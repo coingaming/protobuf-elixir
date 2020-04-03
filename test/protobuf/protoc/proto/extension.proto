@@ -9,6 +9,20 @@ option (elixirpb.file).module_prefix = "Protobuf.Protoc.ExtTest";
 
 message Foo {
   optional string a = 1;
+  optional MonthValue month = 2;
+}
+
+enum Month {
+  UNKNOWN = 1;
+  JANUARY = 2;
+}
+
+message MonthValue {
+  optional Month value = 1;
+}
+
+message Enum {
+  optional string value = 1;
 }
 
 message UnixDateTime {

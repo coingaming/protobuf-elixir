@@ -52,8 +52,16 @@ defmodule Protobuf.Protoc.IntegrationTest do
     assert %{deprecated?: true} = My.Test.Options.__message_props__().field_props[1]
   end
 
-  test "extensions" do
-    assert "hello" == Protobuf.Protoc.ExtTest.Foo.new(a: "hello").a
+  describe "extensions" do
+    test "generates" do
+      assert "hello" == Protobuf.Protoc.ExtTest.Foo.new(a: "hello").a
+    end
+
+    test "when using wrappers using with prefixed module in types" do
+      protobuf_file = File.read!("test/protobuf/protoc/proto_gen/extension.pb.ex")
+
+      assert protobuf_file =~ "month: Protobuf.Protoc.ExtTest.Month.t() | nil"
+    end
   end
 
   describe "message extensions" do
@@ -67,6 +75,28 @@ defmodule Protobuf.Protoc.IntegrationTest do
 
     test "keeps the same module", %{protobuf_file: protobuf_file} do
       assert protobuf_file =~ "type: Protobuf.Protoc.ExtTest.UnixDateTime\n"
+    end
+  end
+
+  describe "wrappers support" do
+    setup do
+      %{protobuf_file: File.read!("test/protobuf/protoc/proto_gen/test.pb.ex")}
+    end
+
+    test "generates typesec for scalars", %{protobuf_file: protobuf_file} do
+      assert protobuf_file =~ "integer: integer | nil\n"
+    end
+
+    test "generates typesec for enums", %{protobuf_file: protobuf_file} do
+      assert protobuf_file =~ "hat: My.Test.HatType.t() | nil,\n"
+    end
+
+    test "keeps the wrapper module for scalars", %{protobuf_file: protobuf_file} do
+      assert protobuf_file =~ "field :integer, 2, optional: true, type: My.Test.Int64Value\n"
+    end
+
+    test "keeps the wrapper module for enums", %{protobuf_file: protobuf_file} do
+      assert protobuf_file =~ "field :hat, 1, optional: true, type: My.Test.HatTypeValue\n"
     end
   end
 
@@ -93,6 +123,20 @@ defmodule Protobuf.Protoc.IntegrationTest do
                Protobuf.Protoc.ExtTest.FooWithUnixDateTime.new(
                  inserted_at: udatetime(~N[2020-04-03 11:28:21.929987Z])
                )
+    end
+  end
+
+  describe "wrappers" do
+    test "encodes by wrapping message" do
+      msg = My.Test.ValueWrapperTest.new(hat: :FEZ, integer: 42)
+
+      assert Protobuf.encode(msg) == <<10, 2, 8, 2, 18, 2, 8, 42>>
+    end
+
+    test "decodes a message and unwraps" do
+      decoded = My.Test.ValueWrapperTest.decode(<<10, 2, 8, 2, 18, 2, 8, 42>>)
+
+      assert decoded == My.Test.ValueWrapperTest.new(hat: :FEZ, integer: 42)
     end
   end
 

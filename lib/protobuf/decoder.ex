@@ -3,7 +3,7 @@ defmodule Protobuf.Decoder do
   import Protobuf.WireTypes
   import Bitwise, only: [bsl: 2, bsr: 2, band: 2]
 
-  alias Protobuf.Decodable
+  alias Protobuf.{MessageProps, Decodable}
 
   require Logger
 
@@ -15,13 +15,20 @@ defmodule Protobuf.Decoder do
   @spec decode(binary, atom) :: any
   def decode(data, module) do
     kvs = raw_decode_key(data, [])
-    %{repeated_fields: repeated_fields} = msg_props = module.__message_props__()
+
+    %MessageProps{repeated_fields: repeated_fields, wrapper?: wrapper?} =
+      msg_props = module.__message_props__()
+
     struct = build_struct(kvs, msg_props, module.new())
 
     struct
+    |> maybe_unwrap(wrapper?)
     |> Decodable.to_elixir()
     |> reverse_repeated(repeated_fields)
   end
+
+  defp maybe_unwrap(%{value: value}, true = _wrapper?), do: value
+  defp maybe_unwrap(struct, false = _wrapper?), do: struct
 
   @doc false
   def decode_raw(data) do

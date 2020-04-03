@@ -1,7 +1,7 @@
 defmodule Protobuf.Protoc.Generator.ExtensionTest do
   use ExUnit.Case, async: true
 
-  alias Protobuf.Protoc.Context
+  alias Protobuf.Protoc.{Context, TypeMetadata}
   alias Protobuf.Protoc.Generator.Extension, as: Generator
 
   test "generate/3 generates blank" do
@@ -17,9 +17,9 @@ defmodule Protobuf.Protoc.Generator.ExtensionTest do
     ctx = %Context{
       module_prefix: "ext",
       dep_type_mapping: %{
-        ".ext.Foo1" => %{type_name: "Ext.Foo1"},
-        ".ext.Options" => %{type_name: "Ext.Options"},
-        ".ext.Foo2" => %{type_name: "Ext.Foo2"}
+        ".ext.Foo1" => %TypeMetadata{type_name: "Ext.Foo1"},
+        ".ext.Options" => %TypeMetadata{type_name: "Ext.Options"},
+        ".ext.Foo2" => %TypeMetadata{type_name: "Ext.Foo2"}
       },
       syntax: :proto2
     }
@@ -63,8 +63,8 @@ defmodule Protobuf.Protoc.Generator.ExtensionTest do
     ctx = %Context{
       module_prefix: "ext",
       dep_type_mapping: %{
-        ".ext.Foo1" => %{type_name: "Ext.Foo1"},
-        ".ext.EnumFoo" => %{type_name: "Ext.EnumFoo"}
+        ".ext.Foo1" => %TypeMetadata{type_name: "Ext.Foo1"},
+        ".ext.EnumFoo" => %TypeMetadata{type_name: "Ext.EnumFoo"}
       },
       syntax: :proto2
     }

@@ -40,6 +40,44 @@ defmodule My.Test.Reply.Entry.Game do
   field :TENNIS, 2
 end
 
+defmodule My.Test.HatTypeValue do
+  @moduledoc false
+  use Protobuf, syntax: :proto2, wrapper?: true
+
+  @type t :: %__MODULE__{
+          value: My.Test.HatType.t()
+        }
+  defstruct [:value]
+
+  field :value, 1, optional: true, type: My.Test.HatType, enum: true
+end
+
+defmodule My.Test.Int64Value do
+  @moduledoc false
+  use Protobuf, syntax: :proto2, wrapper?: true
+
+  @type t :: %__MODULE__{
+          value: integer
+        }
+  defstruct [:value]
+
+  field :value, 1, optional: true, type: :int64
+end
+
+defmodule My.Test.ValueWrapperTest do
+  @moduledoc false
+  use Protobuf, syntax: :proto2
+
+  @type t :: %__MODULE__{
+          hat: My.Test.HatType.t() | nil,
+          integer: integer | nil
+        }
+  defstruct [:hat, :integer]
+
+  field :hat, 1, optional: true, type: My.Test.HatTypeValue
+  field :integer, 2, optional: true, type: My.Test.Int64Value
+end
+
 defmodule My.Test.Request.SomeGroup do
   @moduledoc false
   use Protobuf, syntax: :proto2

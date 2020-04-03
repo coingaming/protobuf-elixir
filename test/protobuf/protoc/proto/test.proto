@@ -12,6 +12,21 @@ enum HatType {
   FEZ = 2;
 }
 
+// Wrapper for HatType
+message HatTypeValue {
+  optional HatType value = 1;
+}
+
+// Wrapper for int64
+message Int64Value {
+  optional int64 value = 1;
+}
+
+message ValueWrapperTest {
+  optional HatTypeValue hat = 1;
+  optional Int64Value integer = 2;
+}
+
 // This enum represents days of the week.
 enum Days {
   option allow_alias = true;

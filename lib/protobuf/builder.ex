@@ -88,7 +88,8 @@ defmodule Protobuf.Builder do
   end
 
   defp protobuf_or_term(value, type),
-    do: if(encodable?(value), do: value, else: type.new(value))
+    do: if(encodable?(value) or wrapper?(type), do: value, else: type.new(value))
 
   defp encodable?(v), do: Protobuf.Encodable.impl_for(v) != Protobuf.Encodable.Any
+  defp wrapper?(t), do: t.__message_props__().wrapper?
 end

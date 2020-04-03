@@ -69,6 +69,10 @@ defmodule Protobuf.Protoc.Generator do
   defp syntax(_), do: :proto2
 
   def format_code(code) do
+    # unless code == "" do
+    #   raise ArgumentError, inspect(code)
+    # end
+
     formated =
       if Code.ensure_loaded?(Code) && function_exported?(Code, :format_string!, 2) do
         code

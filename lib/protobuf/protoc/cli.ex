@@ -16,6 +16,8 @@ defmodule Protobuf.Protoc.CLI do
   * --help          Print this help
   """
 
+  alias Protobuf.Protoc.TypeMetadata
+
   @doc false
   def main(["--version"]) do
     {:ok, version} = :application.get_key(:protobuf, :vsn)
@@ -66,6 +68,11 @@ defmodule Protobuf.Protoc.CLI do
     parse_params(ctx, t)
   end
 
+  def parse_params(ctx, ["using_value_wrappers=true" | t]) do
+    ctx = %{ctx | using_value_wrappers?: true}
+    parse_params(ctx, t)
+  end
+
   def parse_params(ctx, _), do: ctx
 
   @doc false
@@ -77,16 +84,20 @@ defmodule Protobuf.Protoc.CLI do
   def find_types(ctx, [], acc), do: %{ctx | global_type_mapping: acc}
 
   def find_types(ctx, [desc | t], acc) do
-    types = find_types_in_proto(desc)
+    types = find_types_in_proto(ctx, desc)
     find_types(ctx, t, Map.put(acc, desc.name, types))
   end
 
   @doc false
-  def find_types_in_proto(%Google.Protobuf.FileDescriptorProto{} = desc) do
+  def find_types_in_proto(
+        %Protobuf.Protoc.Context{} = ctx,
+        %Google.Protobuf.FileDescriptorProto{} = desc
+      ) do
     ctx =
       %Protobuf.Protoc.Context{
         package: desc.package,
-        namespace: []
+        namespace: [],
+        using_value_wrappers?: ctx.using_value_wrappers?
       }
       |> Protobuf.Protoc.Context.cal_file_options(desc.options)
 
@@ -119,19 +130,12 @@ defmodule Protobuf.Protoc.CLI do
     Map.put(ctx, :namespace, new_ns)
   end
 
-  defp update_types(types, %{namespace: ns, package: pkg, module_prefix: prefix}, desc) do
+  defp update_types(types, %{namespace: ns, package: pkg, module_prefix: prefix} = ctx, desc) do
     name = desc.name
     module_name = gen_module_name(prefix, pkg, ns, name)
+    type_metadata = type_metadata(ctx, desc, module_name)
 
-    typespec =
-      desc.options
-      |> get_msg_options()
-      |> Map.get(:typespec)
-
-    Map.put(types, "." <> join_names(pkg, ns, name), %{
-      type_name: module_name,
-      typespec: typespec
-    })
+    Map.put(types, Protobuf.Protoc.Generator.Util.pkg_name(ctx, name), type_metadata)
   end
 
   defp gen_module_name(prefix, pkg, ns, name) do
@@ -159,4 +163,70 @@ defmodule Protobuf.Protoc.CLI do
         opts
     end
   end
+
+  defp type_metadata(ctx, desc, module_name) do
+    typespec = desc.options |> get_msg_options() |> Map.get(:typespec)
+
+    case wrapper_type(ctx, desc) do
+      {wrapper_type_name, scalar?} ->
+        %TypeMetadata{
+          type_name: wrapper_type_name || module_name,
+          module_name: module_name,
+          typespec: typespec,
+          wrapper?: true,
+          wrapper_target_scalar?: scalar?
+        }
+
+      nil ->
+        %TypeMetadata{
+          type_name: module_name,
+          module_name: module_name,
+          typespec: typespec
+        }
+    end
+  end
+
+  defp wrapper_type(ctx, %Google.Protobuf.DescriptorProto{} = desc) do
+    with true <- ctx.using_value_wrappers?,
+         {target_type_name, alias_target_name, scalar?} <- wrapper_target(ctx, desc.field),
+         alias_wrapper_name when not is_nil(alias_wrapper_name) <- wrapper_name(desc.name),
+         true <- String.downcase(alias_target_name) == String.downcase(alias_wrapper_name) do
+      {target_type_name, scalar?}
+    else
+      _ -> nil
+    end
+  end
+
+  defp wrapper_type(_ctx, %Google.Protobuf.EnumDescriptorProto{} = _desc), do: nil
+
+  @wrapper_suffix "Value"
+  @wrapper_suffix_size byte_size(@wrapper_suffix)
+  defp wrapper_name(name) do
+    name_size = byte_size(name)
+    prefix_size = name_size - @wrapper_suffix_size
+
+    case name do
+      <<type_name::binary-size(prefix_size), @wrapper_suffix::binary>> -> type_name
+      _ -> nil
+    end
+  end
+
+  defp wrapper_target(%{namespace: ns, package: pkg, module_prefix: prefix} = _ctx, [
+         %{name: "value", type_name: type_name, type: type} = _field
+       ]) do
+    cond do
+      # NOTE: is_scalar
+      is_nil(type_name) ->
+        {type, to_string(Protobuf.TypeUtil.from_enum(type)), _scalar? = true}
+
+      # NOTE: is_message_or_enum
+      true ->
+        alias_type_name = type_name |> String.split(".") |> List.last()
+        elixir_type_name = gen_module_name(prefix, pkg, ns, alias_type_name)
+
+        {elixir_type_name, alias_type_name, _scalar? = false}
+    end
+  end
+
+  defp wrapper_target(_, _), do: nil
 end

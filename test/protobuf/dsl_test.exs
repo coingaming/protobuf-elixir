@@ -21,7 +21,7 @@ defmodule Protobuf.DSLTest do
     msg_props = Foo.__message_props__()
 
     tags_map =
-      Enum.reduce([1, 2, 3] ++ Enum.to_list(5..17) ++ [101], %{}, fn i, acc ->
+      Enum.reduce([1, 2, 3] ++ Enum.to_list(5..19) ++ [101], %{}, fn i, acc ->
         Map.put(acc, i, i)
       end)
 
@@ -64,7 +64,7 @@ defmodule Protobuf.DSLTest do
 
   test "saves ordered tags" do
     msg_props = Foo.__message_props__()
-    assert [1, 2, 3] ++ Enum.to_list(5..17) ++ [101] == msg_props.ordered_tags
+    assert [1, 2, 3] ++ Enum.to_list(5..19) ++ [101] == msg_props.ordered_tags
   end
 
   test "supports embedded fields" do
@@ -99,7 +99,7 @@ defmodule Protobuf.DSLTest do
 
   test "supports embedded_fields" do
     msg_props = Foo.__message_props__()
-    assert msg_props.embedded_fields == [:e, :h]
+    assert msg_props.embedded_fields == [:e, :h, :q, :r]
   end
 
   test "packed? is true by default for proto3" do

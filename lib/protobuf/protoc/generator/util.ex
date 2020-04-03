@@ -16,6 +16,18 @@ defmodule Protobuf.Protoc.Generator.Util do
     attach_pkg(ns, prefix)
   end
 
+  def pkg_name(%{namespace: ns, package: pkg} = _ctx, name) do
+    "." <> join_names(pkg, ns, name)
+  end
+
+  defp join_names(pkg, ns, name) do
+    ns_str = join_name(ns)
+
+    [pkg, ns_str, name]
+    |> Enum.filter(&(&1 && &1 != ""))
+    |> Enum.join(".")
+  end
+
   defp attach_pkg(name, ""), do: name
   defp attach_pkg(name, nil), do: name
   defp attach_pkg(name, pkg), do: normalize_type_name(pkg) <> "." <> name
@@ -32,10 +44,10 @@ defmodule Protobuf.Protoc.Generator.Util do
   end
 
   def module_from_type_name(ctx, type_name),
-    do: get_metadata_from_type_name(ctx, type_name)[:module_name]
+    do: get_metadata_from_type_name(ctx, type_name).module_name
 
   def type_from_type_name(ctx, type_name),
-    do: get_metadata_from_type_name(ctx, type_name)[:type_name]
+    do: get_metadata_from_type_name(ctx, type_name).type_name
 
   def get_metadata_from_type_name(ctx, type_name) do
     # The doc says there's a situation where type_name begins without a `.`, but I never got that.

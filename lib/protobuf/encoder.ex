@@ -113,6 +113,7 @@ defmodule Protobuf.Encoder do
 
     val
     |> Encodable.to_protobuf(type)
+    |> maybe_wrap(type)
     |> repeated_or_not(repeated, fn v ->
       v = if is_map, do: struct(prop.type, %{key: elem(v, 0), value: elem(v, 1)}), else: v
       # so that oneof {:atom, v} can be encoded
@@ -126,6 +127,14 @@ defmodule Protobuf.Encoder do
     encoded = Enum.map(val, fn v -> encode_type(type, v) end)
     byte_size = IO.iodata_length(encoded)
     [fnum, encode_varint(byte_size), encoded]
+  end
+
+  defp maybe_wrap(value, type) do
+    if type.__message_props__().wrapper? do
+      type.new(value: value)
+    else
+      value
+    end
   end
 
   @spec class_field(map) :: atom
