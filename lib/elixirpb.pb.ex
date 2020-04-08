@@ -5,7 +5,7 @@ defmodule Elixirpb.FileOptions do
   @type t :: %__MODULE__{
           module_prefix: String.t()
         }
-  defstruct [:module_prefix]
+  defstruct module_prefix: nil
 
   field :module_prefix, 1, optional: true, type: :string
 end
@@ -17,7 +17,7 @@ defmodule Elixirpb.MessageOptions do
   @type t :: %__MODULE__{
           typespec: String.t()
         }
-  defstruct [:typespec]
+  defstruct typespec: nil
 
   field :typespec, 1, optional: true, type: :string
 end
