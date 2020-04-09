@@ -14,10 +14,15 @@ gen-google-protos: protoc-gen-elixir
 
 gen-protos: protoc-gen-elixir
 	protoc -I src -I test/protobuf/protoc/proto \
-	 --elixir_out=test/protobuf/protoc/proto_gen \
-	 --plugin=./protoc-gen-elixir \
-	 --elixir_opt=using_value_wrappers=true \
-	 test/protobuf/protoc/proto/*.proto
+		--elixir_out=test/protobuf/protoc/proto_gen \
+		--plugin=./protoc-gen-elixir \
+		--elixir_opt=using_value_wrappers=true \
+		test/protobuf/protoc/proto/extension.proto
+	protoc -I src -I test/protobuf/protoc/proto \
+		--elixir_out=test/protobuf/protoc/proto_gen \
+		--plugin=./protoc-gen-elixir \
+		--elixir_opt=using_value_wrappers=true,package_prefix=my \
+		test/protobuf/protoc/proto/test.proto
 	protoc -I src --elixir_out=lib --plugin=./protoc-gen-elixir elixirpb.proto
 
 .PHONY: clean gen_google_proto gen_test_protos

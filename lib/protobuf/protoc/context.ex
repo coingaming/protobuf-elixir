@@ -14,6 +14,7 @@ defmodule Protobuf.Protoc.Context do
 
             # Package name
             package: nil,
+            package_prefix: nil,
             module_prefix: nil,
             syntax: nil,
             # Mapping from type_name to metadata. It's merged type mapping of dependencies files including itself
@@ -35,7 +36,7 @@ defmodule Protobuf.Protoc.Context do
             using_value_wrappers?: false
 
   def cal_file_options(ctx, nil) do
-    %{ctx | custom_file_options: %{}, module_prefix: ctx.package || ""}
+    %{ctx | custom_file_options: %{}}
   end
 
   def cal_file_options(ctx, options) do
@@ -48,7 +49,7 @@ defmodule Protobuf.Protoc.Context do
           opts
       end
 
-    module_prefix = Map.get(opts, :module_prefix) || (ctx.package || "")
+    module_prefix = Map.get(opts, :module_prefix)
     %{ctx | custom_file_options: opts, module_prefix: module_prefix}
   end
 end

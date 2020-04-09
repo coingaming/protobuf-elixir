@@ -1,7 +1,7 @@
 defmodule Protobuf.Protoc.GeneratorTest do
   use ExUnit.Case, async: true
 
-  alias Protobuf.Protoc.{Generator, Context}
+  alias Protobuf.Protoc.{Context, Generator, TypeMetadata}
 
   test "generate/2 works" do
     ctx = %Context{global_type_mapping: %{"name.proto" => %{}}}
@@ -12,5 +12,42 @@ defmodule Protobuf.Protoc.GeneratorTest do
                name: "name.pb.ex",
                content: ""
              )
+  end
+
+  test "generate/2 uses the package prefix" do
+    ctx = %Context{
+      package_prefix: "myapp",
+      global_type_mapping: %{
+        "name.proto" => %{".Foo" => %TypeMetadata{type_name: "Myapp.Foo"}}
+      }
+    }
+
+    desc =
+      Google.Protobuf.FileDescriptorProto.new(
+        name: "name.proto",
+        message_type: [Google.Protobuf.DescriptorProto.new(name: "Foo")]
+      )
+
+    file = Generator.generate(ctx, desc)
+    assert file.content =~ "defmodule Myapp.Foo do\n"
+  end
+
+  test "generate/2 uses the package prefix when descriptor has package" do
+    ctx = %Context{
+      package_prefix: "myapp.proto",
+      global_type_mapping: %{
+        "name.proto" => %{".lib.Foo" => %TypeMetadata{type_name: "Myapp.Proto.Lib.Foo"}}
+      }
+    }
+
+    desc =
+      Google.Protobuf.FileDescriptorProto.new(
+        name: "name.proto",
+        package: "lib",
+        message_type: [Google.Protobuf.DescriptorProto.new(name: "Foo")]
+      )
+
+    file = Generator.generate(ctx, desc)
+    assert file.content =~ "defmodule Myapp.Proto.Lib.Foo do\n"
   end
 end

@@ -73,6 +73,11 @@ defmodule Protobuf.Protoc.CLI do
     parse_params(ctx, t)
   end
 
+  def parse_params(ctx, ["package_prefix=" <> package | t]) do
+    ctx = %{ctx | package_prefix: package}
+    parse_params(ctx, t)
+  end
+
   def parse_params(ctx, _), do: ctx
 
   @doc false
@@ -97,7 +102,8 @@ defmodule Protobuf.Protoc.CLI do
       %Protobuf.Protoc.Context{
         package: desc.package,
         namespace: [],
-        using_value_wrappers?: ctx.using_value_wrappers?
+        using_value_wrappers?: ctx.using_value_wrappers?,
+        package_prefix: ctx.package_prefix
       }
       |> Protobuf.Protoc.Context.cal_file_options(desc.options)
 
@@ -130,16 +136,17 @@ defmodule Protobuf.Protoc.CLI do
     Map.put(ctx, :namespace, new_ns)
   end
 
-  defp update_types(types, %{namespace: ns, package: pkg, module_prefix: prefix} = ctx, desc) do
+  defp update_types(types, %{namespace: ns} = ctx, desc) do
     name = desc.name
-    module_name = gen_module_name(prefix, pkg, ns, name)
+    module_name = gen_module_name(ctx, ns, name)
     type_metadata = type_metadata(ctx, desc, module_name)
 
     Map.put(types, Protobuf.Protoc.Generator.Util.pkg_name(ctx, name), type_metadata)
   end
 
-  defp gen_module_name(prefix, pkg, ns, name) do
-    (prefix || pkg)
+  defp gen_module_name(ctx, ns, name) do
+    ctx
+    |> Protobuf.Protoc.Generator.Util.prefixed_name()
     |> join_names(ns, name)
     |> Protobuf.Protoc.Generator.Util.normalize_type_name()
   end
@@ -211,7 +218,7 @@ defmodule Protobuf.Protoc.CLI do
     end
   end
 
-  defp wrapper_target(%{namespace: ns, package: pkg, module_prefix: prefix} = _ctx, [
+  defp wrapper_target(%{namespace: ns} = ctx, [
          %{name: "value", type_name: type_name, type: type} = _field
        ]) do
     cond do
@@ -222,7 +229,7 @@ defmodule Protobuf.Protoc.CLI do
       # NOTE: is_message_or_enum
       true ->
         alias_type_name = type_name |> String.split(".") |> List.last()
-        elixir_type_name = gen_module_name(prefix, pkg, ns, alias_type_name)
+        elixir_type_name = gen_module_name(ctx, ns, alias_type_name)
 
         {elixir_type_name, alias_type_name, _scalar? = false}
     end
