@@ -180,6 +180,7 @@ defmodule Protobuf.DSL do
       oneof: Enum.reverse(oneofs),
       enum?: Keyword.get(options, :enum) == true,
       map?: Keyword.get(options, :map) == true,
+      wrapper?: Keyword.get(options, :wrapper?) == true,
       extension_range: extensions
     }
   end

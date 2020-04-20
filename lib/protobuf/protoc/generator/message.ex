@@ -24,11 +24,13 @@ defmodule Protobuf.Protoc.Generator.Message do
     fields = get_fields(ctx, desc)
     extensions = get_extensions(desc)
     generate_desc = if ctx.gen_descriptors?, do: desc, else: nil
+    pkg_name = Util.pkg_name(ctx, desc.name)
+    msg_type_metadata = type_metadata(ctx, pkg_name)
 
     %{
       new_namespace: new_ns,
       name: Util.mod_name(ctx, new_ns),
-      options: msg_opts_str(ctx, desc.options),
+      options: msg_opts_str(ctx, desc.options, msg_type_metadata),
       structs: structs_str(desc, extensions),
       typespec: typespec_str(fields, desc.oneof_decl, extensions),
       fields: fields,
@@ -64,7 +66,7 @@ defmodule Protobuf.Protoc.Generator.Message do
       label_str =
         if syntax == :proto3 && f[:label] != "repeated", do: "", else: "#{f[:label]}: true, "
 
-      ":#{f[:name]}, #{f[:number]}, #{label_str}type: #{f[:type]}#{opts_str}"
+      ":#{f[:name]}, #{f[:number]}, #{label_str}type: #{f[:module_name]}#{opts_str}"
     end)
   end
 
@@ -76,13 +78,14 @@ defmodule Protobuf.Protoc.Generator.Message do
     inspect(exts)
   end
 
-  def msg_opts_str(%{syntax: syntax}, opts) do
-    msg_options = opts
+  def msg_opts_str(%{syntax: syntax}, options, type_metadata) do
+    msg_options = options
 
     opts = %{
       syntax: syntax,
       map: msg_options && msg_options.map_entry,
-      deprecated: msg_options && msg_options.deprecated
+      deprecated: msg_options && msg_options.deprecated,
+      wrapper?: type_metadata && type_metadata.wrapper?
     }
 
     str = Util.options_to_str(opts)
@@ -152,32 +155,35 @@ defmodule Protobuf.Protoc.Generator.Message do
     "%{#{k_type} => #{v_type}}"
   end
 
-  defp fmt_type(%{label: "repeated", type_enum: type_enum, type: type, typespec: typespec}) do
-    "[#{typespec || type_to_spec(type_enum, type, true)}]"
+  defp fmt_type(%{label: "repeated", type_enum: type_enum, type: type, type_metadata: metadata}) do
+    "[#{type_to_spec(type_enum, type, _repeated? = true, metadata)}]"
   end
 
-  defp fmt_type(%{type_enum: type_enum, type: type, typespec: typespec}) do
-    cond do
-      type_enum == :TYPE_MESSAGE and typespec ->
-        typespec <> " | nil"
+  defp fmt_type(%{type_enum: type_enum, type: type, type_metadata: metadata}) do
+    "#{type_to_spec(type_enum, type, _repeated? = false, metadata)}"
+  end
 
-      typespec ->
-        typespec
+  defp type_to_spec(enum, type, repeated \\ false, metadata \\ nil)
 
-      true ->
-        "#{type_to_spec(type_enum, type)}"
+  defp type_to_spec(:TYPE_MESSAGE, type, repeated, metadata) do
+    type_str =
+      cond do
+        metadata && metadata.typespec -> metadata.typespec
+        metadata && metadata.wrapper_target_scalar? -> TypeUtil.enum_to_spec(type)
+        true -> nil
+      end
+
+    if type_str do
+      (repeated and type_str) || "#{type_str} | nil"
+    else
+      TypeUtil.enum_to_spec(:TYPE_MESSAGE, type, repeated)
     end
   end
 
-  defp type_to_spec(enum, type, repeated \\ false)
-
-  defp type_to_spec(:TYPE_MESSAGE, type, repeated),
-    do: TypeUtil.enum_to_spec(:TYPE_MESSAGE, type, repeated)
-
-  defp type_to_spec(:TYPE_ENUM, type, repeated),
+  defp type_to_spec(:TYPE_ENUM, type, repeated, _metadata),
     do: TypeUtil.enum_to_spec(:TYPE_ENUM, type, repeated)
 
-  defp type_to_spec(enum, _, _), do: TypeUtil.enum_to_spec(enum)
+  defp type_to_spec(enum, _, _, _), do: TypeUtil.enum_to_spec(enum)
 
   def get_fields(ctx, desc) do
     oneofs = Enum.map(desc.oneof_decl, & &1.name)
@@ -196,15 +202,13 @@ defmodule Protobuf.Protoc.Generator.Message do
     opts_str = Util.options_to_str(opts)
     opts_str = if opts_str == "", do: "", else: ", " <> opts_str
 
-    type = field_type_name(ctx, f)
-    typespec = field_typespec(ctx, f)
-
     %{
       name: f.name,
       number: f.number,
       label: label_name(f.label),
-      type: type,
-      typespec: typespec,
+      type: metadata_or_type_name(ctx, f, :type_name),
+      type_metadata: type_metadata(ctx, f.type_name),
+      module_name: metadata_or_type_name(ctx, f, :module_name),
       type_enum: f.type,
       opts: opts,
       opts_str: opts_str,
@@ -219,20 +223,22 @@ defmodule Protobuf.Protoc.Generator.Message do
     end)
   end
 
-  defp field_type_name(ctx, f) do
+  defp metadata_or_type_name(ctx, f, metadata_field) do
     type = TypeUtil.from_enum(f.type)
 
     if f.type_name && (type == :enum || type == :message) do
-      Util.get_metadata_from_type_name(ctx, f.type_name)[:type_name]
+      ctx
+      |> Util.get_metadata_from_type_name(f.type_name)
+      |> Map.fetch!(metadata_field)
     else
       ":#{type}"
     end
   end
 
-  defp field_typespec(_ctx, %{type_name: nil} = _field), do: nil
+  defp type_metadata(_ctx, nil), do: nil
 
-  defp field_typespec(ctx, %{type_name: type_name} = _field),
-    do: Util.get_metadata_from_type_name(ctx, type_name)[:typespec]
+  defp type_metadata(ctx, type_name),
+    do: Util.get_metadata_from_type_name(ctx, type_name)
 
   # Map of protobuf are actually nested(one level) messages
   defp nested_maps(ctx, desc) do
@@ -244,7 +250,9 @@ defmodule Protobuf.Protoc.Generator.Message do
         desc.options && desc.options.map_entry ->
           [k, v] = Enum.sort(desc.field, &(&1.number < &2.number))
 
-          pair = {{k.type, field_type_name(ctx, k)}, {v.type, field_type_name(ctx, v)}}
+          pair =
+            {{k.type, metadata_or_type_name(ctx, k, :type_name)},
+             {v.type, metadata_or_type_name(ctx, v, :type_name)}}
 
           Map.put(acc, Util.join_name([prefix, desc.name]), pair)
 

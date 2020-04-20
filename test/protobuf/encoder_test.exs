@@ -193,4 +193,16 @@ defmodule Protobuf.EncoderTest do
 
     assert Encoder.encode(msg) == <<10, 4, 8, 132, 171, 44>>
   end
+
+  test "wraps scalar values" do
+    msg = TestMsg.Foo.new(q: :A)
+
+    assert Encoder.encode(msg) == <<146, 1, 2, 0, 1>>
+  end
+
+  test "wraps enum values" do
+    msg = TestMsg.Foo.new(r: 42)
+
+    assert Encoder.encode(msg) == <<154, 1, 2, 0, 42>>
+  end
 end

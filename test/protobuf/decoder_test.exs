@@ -144,4 +144,12 @@ defmodule Protobuf.DecoderTest do
   test "transforms to elixir representation after decode the message" do
     assert Decoder.decode(<<8, 132, 171, 44>>, TestMsg.DateFoo) == ~D[1988-10-29]
   end
+
+  test "unwraps scalar values" do
+    assert Decoder.decode(<<0, 13>>, TestMsg.Int32Value) == 13
+  end
+
+  test "unwraps enum values" do
+    assert Decoder.decode(<<0, 1>>, TestMsg.EnumFooValue) == :A
+  end
 end

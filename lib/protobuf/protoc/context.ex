@@ -7,7 +7,7 @@ defmodule Protobuf.Protoc.Context do
             ### All files scope
 
             # Mapping from file name to (mapping from type name to metadata, like elixir type name)
-            # %{"example.proto" => %{".example.FooMsg" => %{type_name: "Example.FooMsg"}}}
+            # %{"example.proto" => %{".example.FooMsg" => %TypeMetadata{type_name: "Example.FooMsg"}}}
             global_type_mapping: %{},
 
             ### One file scope
@@ -17,7 +17,7 @@ defmodule Protobuf.Protoc.Context do
             module_prefix: nil,
             syntax: nil,
             # Mapping from type_name to metadata. It's merged type mapping of dependencies files including itself
-            # %{".example.FooMsg" => %{type_name: "Example.FooMsg"}}
+            # %{".example.FooMsg" => %TypeMetadata{type_name: "Example.FooMsg"}}
             dep_type_mapping: %{},
 
             # For a message
@@ -29,7 +29,10 @@ defmodule Protobuf.Protoc.Context do
             gen_descriptors?: false,
 
             # Elixirpb.FileOptions
-            custom_file_options: %{}
+            custom_file_options: %{},
+
+            # option that allows unwrap and wrap scalars/enum values
+            using_value_wrappers?: false
 
   def cal_file_options(ctx, nil) do
     %{ctx | custom_file_options: %{}, module_prefix: ctx.package || ""}

@@ -1,13 +1,49 @@
+defmodule Protobuf.Protoc.ExtTest.Month do
+  @moduledoc false
+  use Protobuf, enum: true, syntax: :proto2
+
+  @type t :: integer | :UNKNOWN | :JANUARY
+
+  field :UNKNOWN, 1
+  field :JANUARY, 2
+end
+
 defmodule Protobuf.Protoc.ExtTest.Foo do
   @moduledoc false
   use Protobuf, syntax: :proto2
 
   @type t :: %__MODULE__{
-          a: String.t()
+          a: String.t(),
+          month: Protobuf.Protoc.ExtTest.Month.t() | nil
         }
-  defstruct [:a]
+  defstruct [:a, :month]
 
   field :a, 1, optional: true, type: :string
+  field :month, 2, optional: true, type: Protobuf.Protoc.ExtTest.MonthValue
+end
+
+defmodule Protobuf.Protoc.ExtTest.MonthValue do
+  @moduledoc false
+  use Protobuf, syntax: :proto2, wrapper?: true
+
+  @type t :: %__MODULE__{
+          value: Protobuf.Protoc.ExtTest.Month.t()
+        }
+  defstruct [:value]
+
+  field :value, 1, optional: true, type: Protobuf.Protoc.ExtTest.Month, enum: true
+end
+
+defmodule Protobuf.Protoc.ExtTest.Enum do
+  @moduledoc false
+  use Protobuf, syntax: :proto2
+
+  @type t :: %__MODULE__{
+          value: String.t()
+        }
+  defstruct [:value]
+
+  field :value, 1, optional: true, type: :string
 end
 
 defmodule Protobuf.Protoc.ExtTest.UnixDateTime do

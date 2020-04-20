@@ -30,10 +30,42 @@ defmodule TestMsg do
     field :value, 2, type: :int32
   end
 
+  defmodule EnumFooValue do
+    use Protobuf, enum: true, syntax: :proto3, wrapper?: true
+
+    field :value, 0, type: EnumFoo, enum: true
+  end
+
+  defmodule Int32Value do
+    use Protobuf, enum: true, syntax: :proto3, wrapper?: true
+
+    field :value, 0, type: :int32
+  end
+
   defmodule Foo do
     use Protobuf, syntax: :proto3
 
-    defstruct [:a, :b, :c, :d, :e, :f, :g, :h, :i, :j, :k, :l, :m, :n, :o, :p, :non_matched]
+    defstruct [
+      :a,
+      :b,
+      :c,
+      :d,
+      :e,
+      :f,
+      :g,
+      :h,
+      :i,
+      :j,
+      :k,
+      :l,
+      :m,
+      :n,
+      :o,
+      :p,
+      :q,
+      :r,
+      :non_matched
+    ]
 
     field :a, 1, type: :int32
     field :b, 2, type: :fixed64
@@ -52,6 +84,9 @@ defmodule TestMsg do
     field :n, 15, type: :double
     field :o, 16, repeated: true, type: EnumFoo, enum: true
     field :p, 17, type: :string, deprecated: true
+    field :q, 18, type: EnumFooValue
+    field :r, 19, type: Int32Value
+
     # Used for testing against same field name with different types(in Foo2)
     field :non_matched, 101, type: :string
   end

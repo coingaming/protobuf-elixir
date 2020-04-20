@@ -3,9 +3,10 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
 
   alias Protobuf.Protoc.Context
   alias Protobuf.Protoc.Generator.Message, as: Generator
+  alias Protobuf.Protoc.TypeMetadata
 
   test "generate/2 has right name" do
-    ctx = %Context{package: ""}
+    ctx = %Context{package: "", dep_type_mapping: %{".Foo" => %TypeMetadata{}}}
     desc = Google.Protobuf.DescriptorProto.new(name: "Foo")
     {[], [msg]} = Generator.generate(ctx, desc)
     assert msg =~ "defmodule Foo do\n"
@@ -14,7 +15,7 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 has right syntax" do
-    ctx = %Context{package: "", syntax: :proto3}
+    ctx = %Context{package: "", syntax: :proto3, dep_type_mapping: %{".Foo" => %TypeMetadata{}}}
     desc = Google.Protobuf.DescriptorProto.new(name: "Foo")
     {[], [msg]} = Generator.generate(ctx, desc)
     assert msg =~ "defmodule Foo do\n"
@@ -23,14 +24,19 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 has right name with package" do
-    ctx = %Context{package: "pkg.name", module_prefix: "Pkg.Name"}
+    ctx = %Context{
+      package: "pkg.name",
+      module_prefix: "Pkg.Name",
+      dep_type_mapping: %{".pkg.name.Foo" => %TypeMetadata{}}
+    }
+
     desc = Google.Protobuf.DescriptorProto.new(name: "Foo")
     {[], [msg]} = Generator.generate(ctx, desc)
     assert msg =~ "defmodule Pkg.Name.Foo do\n"
   end
 
   test "generate/2 has right options" do
-    ctx = %Context{package: "pkg.name"}
+    ctx = %Context{package: "pkg.name", dep_type_mapping: %{".pkg.name.Foo" => %TypeMetadata{}}}
 
     desc =
       Google.Protobuf.DescriptorProto.new(
@@ -43,7 +49,12 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 has right fields" do
-    ctx = %Context{package: ""}
+    ctx = %Context{
+      package: "",
+      dep_type_mapping: %{
+        ".Foo" => %TypeMetadata{}
+      }
+    }
 
     desc =
       Google.Protobuf.DescriptorProto.new(
@@ -73,7 +84,11 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 has right fields for proto3" do
-    ctx = %Context{package: "", syntax: :proto3}
+    ctx = %Context{
+      package: "",
+      syntax: :proto3,
+      dep_type_mapping: %{".Foo" => %TypeMetadata{}}
+    }
 
     desc =
       Google.Protobuf.DescriptorProto.new(
@@ -110,7 +125,7 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 supports option :default" do
-    ctx = %Context{package: ""}
+    ctx = %Context{package: "", dep_type_mapping: %{".Foo" => %TypeMetadata{}}}
 
     desc =
       Google.Protobuf.DescriptorProto.new(
@@ -132,7 +147,7 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 supports option :packed" do
-    ctx = %Context{package: ""}
+    ctx = %Context{package: "", dep_type_mapping: %{".Foo" => %TypeMetadata{}}}
 
     desc =
       Google.Protobuf.DescriptorProto.new(
@@ -153,7 +168,7 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 supports option :deprecated" do
-    ctx = %Context{package: ""}
+    ctx = %Context{package: "", dep_type_mapping: %{".Foo" => %TypeMetadata{}}}
 
     desc =
       Google.Protobuf.DescriptorProto.new(
@@ -177,8 +192,9 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
     ctx = %Context{
       package: "",
       dep_type_mapping: %{
-        ".Bar" => %{type_name: "Bar"},
-        ".Baz" => %{type_name: "Baz"}
+        ".Bar" => %TypeMetadata{type_name: "Bar"},
+        ".Baz" => %TypeMetadata{type_name: "Baz"},
+        ".Foo" => %TypeMetadata{}
       }
     }
 
@@ -212,14 +228,15 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
     ctx = %Context{
       package: "foo_bar.ab_cd",
       dep_type_mapping: %{
-        ".foo_bar.ab_cd.Foo.ProjectsEntry" => %{
+        ".foo_bar.ab_cd.Foo.ProjectsEntry" => %TypeMetadata{
           type_name: "FooBar.AbCd.Foo.ProjectsEntry",
-          typespec: "FooBar.AbCd.Foo.ProjectsEntry"
+          module_name: "FooBar.AbCd.Foo.ProjectsEntry"
         },
-        ".foo_bar.ab_cd.Bar" => %{
+        ".foo_bar.ab_cd.Bar" => %TypeMetadata{
           type_name: "FooBar.AbCd.Bar",
-          typespec: "FooBar.AbCd.Bar"
-        }
+          module_name: "FooBar.AbCd.Bar"
+        },
+        ".foo_bar.ab_cd.Foo" => %TypeMetadata{}
       },
       module_prefix: "FooBar.AbCd"
     }
@@ -268,9 +285,11 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
     ctx = %Context{
       package: "foo_bar.ab_cd",
       dep_type_mapping: %{
-        ".foo_bar.ab_cd.EnumFoo" => %{
-          type_name: "FooBar.AbCd.EnumFoo"
-        }
+        ".foo_bar.ab_cd.EnumFoo" => %TypeMetadata{
+          type_name: "FooBar.AbCd.EnumFoo",
+          module_name: "FooBar.AbCd.EnumFoo"
+        },
+        ".foo_bar.ab_cd.Foo" => %TypeMetadata{}
       }
     }
 
@@ -297,10 +316,11 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
     ctx = %Context{
       package: "foo_bar.ab_cd",
       dep_type_mapping: %{
-        ".other_pkg.EnumFoo" => %{
+        ".other_pkg.EnumFoo" => %TypeMetadata{
           type_name: "OtherPkg.EnumFoo",
-          typespec: "OtherPkg.EnumFoo"
-        }
+          module_name: "OtherPkg.EnumFoo"
+        },
+        ".foo_bar.ab_cd.Foo" => %TypeMetadata{}
       }
     }
 
@@ -326,10 +346,12 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
     ctx = %Context{
       package: "foo_bar.ab_cd",
       dep_type_mapping: %{
-        ".other_pkg.MsgFoo" => %{
+        ".other_pkg.MsgFoo" => %TypeMetadata{
           type_name: "OtherPkg.MsgFoo",
+          module_name: "OtherPkg.MsgFoo",
           typespec: "CustomType.t"
-        }
+        },
+        ".foo_bar.ab_cd.Foo" => %TypeMetadata{}
       }
     }
 
@@ -353,7 +375,13 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 supports nested messages" do
-    ctx = %Context{package: ""}
+    ctx = %Context{
+      package: "",
+      dep_type_mapping: %{
+        ".Foo" => %TypeMetadata{},
+        ".Foo.Nested" => %TypeMetadata{}
+      }
+    }
 
     desc =
       Google.Protobuf.DescriptorProto.new(
@@ -369,7 +397,10 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 supports nested enum messages" do
-    ctx = %Context{package: ""}
+    ctx = %Context{
+      package: "",
+      dep_type_mapping: %{".Foo" => %TypeMetadata{}, ".Foo.Nested" => %TypeMetadata{}}
+    }
 
     desc =
       Google.Protobuf.DescriptorProto.new(
@@ -397,7 +428,7 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
   end
 
   test "generate/2 supports oneof" do
-    ctx = %Context{package: ""}
+    ctx = %Context{package: "", dep_type_mapping: %{".Foo" => %TypeMetadata{}}}
 
     desc =
       Google.Protobuf.DescriptorProto.new(
