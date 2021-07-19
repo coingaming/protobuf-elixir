@@ -129,6 +129,14 @@ defmodule Protobuf.Encoder do
     [fnum, encode_varint(byte_size), encoded]
   end
 
+  defp maybe_wrap(value, type) when is_struct(value) do
+    if type.__message_props__().wrapper? && value.__struct__ != type do
+      type.new(value: value)
+    else
+      value
+    end
+  end
+
   defp maybe_wrap(value, type) do
     if type.__message_props__().wrapper? do
       type.new(value: value)
