@@ -2,6 +2,7 @@ defmodule Protobuf.EncoderTest do
   use ExUnit.Case, async: true
 
   alias Protobuf.Encoder
+  alias Protobuf.Decoder
 
   test "encodes one simple field" do
     bin = Encoder.encode(TestMsg.Foo.new(a: 42))
@@ -204,5 +205,15 @@ defmodule Protobuf.EncoderTest do
     msg = TestMsg.Foo.new(r: 42)
 
     assert Encoder.encode(msg) == <<154, 1, 2, 0, 42>>
+  end
+
+  test "encoding/decoding will result in same value" do
+    orig_msg = TestMsg.Foo.new(r: 0)
+    msg =
+      TestMsg.Foo.new(r: 0)
+      |> Encoder.encode()
+      |> Decoder.decode(TestMsg.Foo)
+
+    assert msg == orig_msg
   end
 end
