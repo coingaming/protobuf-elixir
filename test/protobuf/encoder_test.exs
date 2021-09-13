@@ -207,13 +207,9 @@ defmodule Protobuf.EncoderTest do
     assert Encoder.encode(msg) == <<154, 1, 2, 0, 42>>
   end
 
-  test "encoding/decoding will result in same value" do
-    orig_msg = TestMsg.Foo.new(r: 0)
-    msg =
-      TestMsg.Foo.new(r: 0)
-      |> Encoder.encode()
-      |> Decoder.decode(TestMsg.Foo)
+  test "wraps default value type" do
+    msg = TestMsg.Foo.new(r: 0)
 
-    assert msg == orig_msg
+    assert Encoder.encode(msg) == <<154, 1, 0>>
   end
 end
