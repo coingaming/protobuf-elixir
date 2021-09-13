@@ -91,10 +91,10 @@ defmodule Protobuf.Encoder do
   def skip_field?(_, v, _) when map_size(v) == 0, do: true
   def skip_field?(:proto2, nil, %{optional?: true}), do: true
   def skip_field?(:proto3, nil, _), do: true
-  def skip_field?(:proto3, 0, %{oneof: nil}), do: true
-  def skip_field?(:proto3, 0.0, %{oneof: nil}), do: true
-  def skip_field?(:proto3, "", %{oneof: nil}), do: true
-  def skip_field?(:proto3, false, %{oneof: nil}), do: true
+  def skip_field?(:proto3, 0, %{oneof: nil, embedded?: false}), do: true
+  def skip_field?(:proto3, 0.0, %{oneof: nil, embedded?: false}), do: true
+  def skip_field?(:proto3, "", %{oneof: nil, embedded?: false}), do: true
+  def skip_field?(:proto3, false, %{oneof: nil, embedded?: false}), do: true
   def skip_field?(_, _, _), do: false
 
   @spec encode_field(atom, any, FieldProps.t()) :: iodata

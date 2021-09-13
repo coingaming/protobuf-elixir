@@ -2,7 +2,6 @@ defmodule Protobuf.EncoderTest do
   use ExUnit.Case, async: true
 
   alias Protobuf.Encoder
-  alias Protobuf.Decoder
 
   test "encodes one simple field" do
     bin = Encoder.encode(TestMsg.Foo.new(a: 42))
