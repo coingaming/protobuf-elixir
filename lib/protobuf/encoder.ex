@@ -75,14 +75,10 @@ defmodule Protobuf.Encoder do
     end
   rescue
     error ->
-      stacktrace = System.stacktrace()
-
       msg =
-        "Got error when encoding #{inspect(struct.__struct__)}##{prop.name_atom}: #{
-          Exception.format(:error, error)
-        }"
+        "Got error when encoding #{inspect(struct.__struct__)}##{prop.name_atom}: #{Exception.format(:error, error)}"
 
-      throw({Protobuf.EncodeError, [message: msg], stacktrace})
+      throw({Protobuf.EncodeError, [message: msg], __STACKTRACE__})
   end
 
   @doc false
@@ -111,10 +107,12 @@ defmodule Protobuf.Encoder do
        ) do
     repeated = is_repeated || is_map
 
-    val
-    |> Encodable.to_protobuf(type)
-    |> maybe_wrap(type)
-    |> repeated_or_not(repeated, fn v ->
+    repeated_or_not(val, repeated, fn v ->
+      v =
+        v
+        |> Encodable.to_protobuf(type)
+        |> maybe_wrap(type)
+
       v = if is_map, do: struct(prop.type, %{key: elem(v, 0), value: elem(v, 1)}), else: v
       # so that oneof {:atom, v} can be encoded
       encoded = encode(type, v, [])
@@ -190,11 +188,8 @@ defmodule Protobuf.Encoder do
   def encode_type(:double, :nan), do: <<1, 0, 0, 0, 0, 0, 248, 127>>
   def encode_type(:double, n), do: <<n::64-float-little>>
 
-  def encode_type(:bytes, n) do
-    bin = IO.iodata_to_binary(n)
-    len = bin |> byte_size |> encode_varint
-    <<len::binary, bin::binary>>
-  end
+  def encode_type(:bytes, n) when is_atom(n), do: encode_type_byte(Atom.to_string(n))
+  def encode_type(:bytes, n), do: encode_type_byte(IO.iodata_to_binary(n))
 
   def encode_type(:sint32, n) when n >= -0x80000000 and n <= 0x7FFFFFFF,
     do: n |> encode_zigzag |> encode_varint
@@ -214,6 +209,11 @@ defmodule Protobuf.Encoder do
 
   def encode_type(type, n) do
     raise Protobuf.TypeEncodeError, message: "#{inspect(n)} is invalid for type #{type}"
+  end
+
+  defp encode_type_byte(bin) do
+    len = bin |> byte_size |> encode_varint
+    <<len::binary, bin::binary>>
   end
 
   @spec encode_zigzag(integer) :: integer

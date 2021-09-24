@@ -1,13 +1,13 @@
 defmodule Protobuf.Mixfile do
   use Mix.Project
 
-  @version "0.8.0-beta.1"
+  @version "0.8.0-beta.2"
 
   def project do
     [
       app: :protobuf,
       version: @version,
-      elixir: "~> 1.6",
+      elixir: "~> 1.11",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
