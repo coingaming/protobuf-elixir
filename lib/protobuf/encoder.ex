@@ -75,14 +75,12 @@ defmodule Protobuf.Encoder do
     end
   rescue
     error ->
-      stacktrace = System.stacktrace()
-
       msg =
         "Got error when encoding #{inspect(struct.__struct__)}##{prop.name_atom}: #{
           Exception.format(:error, error)
         }"
 
-      throw({Protobuf.EncodeError, [message: msg], stacktrace})
+      throw({Protobuf.EncodeError, [message: msg], __STACKTRACE__})
   end
 
   @doc false
@@ -111,10 +109,12 @@ defmodule Protobuf.Encoder do
        ) do
     repeated = is_repeated || is_map
 
-    val
-    |> Encodable.to_protobuf(type)
-    |> maybe_wrap(type)
-    |> repeated_or_not(repeated, fn v ->
+    repeated_or_not(val, repeated, fn v ->
+      v =
+        v
+        |> Encodable.to_protobuf(type)
+        |> maybe_wrap(type)
+
       v = if is_map, do: struct(prop.type, %{key: elem(v, 0), value: elem(v, 1)}), else: v
       # so that oneof {:atom, v} can be encoded
       encoded = encode(type, v, [])
