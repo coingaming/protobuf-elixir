@@ -112,11 +112,15 @@ defmodule Protobuf.Encoder do
     repeated = is_repeated || is_map
 
     val
-    |> Encodable.to_protobuf(type)
-    |> maybe_wrap(type)
     |> repeated_or_not(repeated, fn v ->
       v = if is_map, do: struct(prop.type, %{key: elem(v, 0), value: elem(v, 1)}), else: v
       # so that oneof {:atom, v} can be encoded
+
+      v =
+        v
+        |> Encodable.to_protobuf(type)
+        |> maybe_wrap(type)
+
       encoded = encode(type, v, [])
       byte_size = byte_size(encoded)
       [fnum, encode_varint(byte_size), encoded]
