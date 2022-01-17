@@ -1,7 +1,7 @@
 defmodule Protobuf.Mixfile do
   use Mix.Project
 
-  @version "0.8.0-beta.2"
+  @version "VERSION" |> File.read!() |> String.trim()
 
   def project do
     [
@@ -47,7 +47,7 @@ defmodule Protobuf.Mixfile do
 
   defp package do
     [
-      maintainers: ["Bing Han"],
+      organization: "coingaming",
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/tony612/protobuf-elixir"},
       files:
