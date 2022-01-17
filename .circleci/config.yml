@@ -41,6 +41,12 @@ jobs:
           name: Build deps
           command: mix deps.get
       - run:
+          name: Compile dependencies
+          command: mix deps.compile
+      - run:
+          name: Compile project
+          command: mix compile --warnings-as-errors
+      - run:
           name: Style checks
           command: mix credo --strict
       - run:
