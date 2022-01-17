@@ -40,9 +40,12 @@ jobs:
       - run:
           name: Build deps
           command: mix deps.get
-      - run:
-          name: Compile dependencies
-          command: mix deps.compile
+      # - run:
+      #     name: Install eqc_gen
+      #     command: mix eqc.install --mini
+      # - run:
+      #     name: Compile dependencies
+      #     command: mix deps.compile
       # - run:
       #     name: Compile project
       #     command: mix compile --warnings-as-errors
@@ -55,9 +58,9 @@ jobs:
       # - run:
       #     name: Dialyze the app
       #     command: mix dialyzer --halt-exit-status
-      - run:
-          name: Run tests
-          command: mix test
+      # - run:
+      #     name: Run tests
+      #     command: mix test
       - save_cache:
           name: Save mix deps cache
           key: lab_permission_rule-deps-cache-{{ checksum "mix.lock" }}
