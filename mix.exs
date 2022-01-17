@@ -33,7 +33,8 @@ defmodule Protobuf.Mixfile do
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
-      {:eqc_ex, "~> 1.4", only: [:dev, :test]}
+      {:eqc_ex, "~> 1.4", only: [:dev, :test]},
+      {:ex_doc, "~> 0.19", only: [:dev, :test], runtime: false}
     ]
   end
 
