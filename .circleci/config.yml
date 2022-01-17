@@ -1,0 +1,85 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: heathmont/elixir-ci:1.13.1-otp-24-alpine
+    environment:
+      MIX_ENV: test
+    resource_class: xlarge
+    steps:
+      - checkout
+      - run:
+          name: Setup robot SSH key
+          command: echo "$ROBOT_SSH_KEY" | base64 -d > $HOME/.ssh/id_rsa.robot && chmod 600 $HOME/.ssh/id_rsa.robot && ssh-add $HOME/.ssh/id_rsa.robot
+      - run:
+          name: Add github to known hosts
+          command: ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+      - run:
+          name: Setup SSH config
+          command: echo -e "Host *\n IdentityFile $HOME/.ssh/id_rsa.robot\n IdentitiesOnly yes" > $HOME/.ssh/config
+      - run:
+          name: Hex auth
+          command: mix hex.organization auth coingaming --key $HEX_API_KEY
+      - run:
+          name: Update PATH and Define Environment Variable at Runtime
+          command: |
+            echo 'export PATH=~/.mix/escripts:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+      - restore_cache:
+          name: Restore mix deps cache
+          keys:
+            - lab_permission_rule-deps-cache-{{ checksum "mix.lock" }}
+      - restore_cache:
+          name: Restore build cache
+          keys:
+            - lab_permission_rule-build-cache-{{ .Branch }}
+      - restore_cache:
+          name: Restore plts for dialyzer cache
+          keys:
+            - v2-lab_permission_rule-plts-cache-{{ .Branch }}
+      - run:
+          name: Build deps
+          command: make deps
+      - run:
+          name: Dialyze the app
+          command: make dialyzer
+      - run:
+          name: Run tests
+          command: make test
+      - save_cache:
+          name: Save mix deps cache
+          key: lab_permission_rule-deps-cache-{{ checksum "mix.lock" }}
+          paths:
+            - deps
+            - ~/.mix
+          when: on_success
+      - save_cache:
+          name: Save build cache
+          key: lab_permission_rule-build-cache-{{ .Branch }}
+          paths:
+            - _build
+          when: on_success
+      - save_cache:
+          name: Save plts for dialyzer cache
+          key: v2-lab_permission_rule-plts-cache-{{ .Branch }}
+          paths:
+            - priv/plts
+          when: on_success
+      - run:
+          name: Credo checks
+          command: make credo  
+      - run:
+          name: Semantic Release
+          command: npx semantic-release
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test:
+          context: global
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: /.*/
