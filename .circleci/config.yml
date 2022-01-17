@@ -61,6 +61,9 @@ jobs:
       # - run:
       #     name: Run tests
       #     command: mix test
+      # - run:
+      #     name: Credo checks
+      #     command: make credo  
       - save_cache:
           name: Save mix deps cache
           key: lab_permission_rule-deps-cache-{{ checksum "mix.lock" }}
@@ -80,9 +83,6 @@ jobs:
           paths:
             - priv/plts
           when: on_success
-      # - run:
-      #     name: Credo checks
-      #     command: make credo  
       - run:
           name: Semantic Release
           command: npx semantic-release
