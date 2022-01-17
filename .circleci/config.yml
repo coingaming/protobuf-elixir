@@ -39,13 +39,19 @@ jobs:
             - v2-lab_permission_rule-plts-cache-{{ .Branch }}
       - run:
           name: Build deps
-          command: make deps
+          command: mix deps.get
+      - run:
+          name: Style checks
+          command: mix credo --strict
+      - run:
+          name: Format check
+          command: mix format --check-formatted
       - run:
           name: Dialyze the app
-          command: make dialyzer
+          command: mix dialyzer --halt-exit-status
       - run:
           name: Run tests
-          command: make test
+          command: mix test
       - save_cache:
           name: Save mix deps cache
           key: lab_permission_rule-deps-cache-{{ checksum "mix.lock" }}
