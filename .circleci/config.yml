@@ -33,10 +33,10 @@ jobs:
           name: Restore build cache
           keys:
             - lab_permission_rule-build-cache-{{ .Branch }}
-      - restore_cache:
-          name: Restore plts for dialyzer cache
-          keys:
-            - v2-lab_permission_rule-plts-cache-{{ .Branch }}
+      # - restore_cache:
+      #     name: Restore plts for dialyzer cache
+      #     keys:
+      #       - v2-lab_permission_rule-plts-cache-{{ .Branch }}
       - run:
           name: Build deps
           command: mix deps.get
@@ -77,12 +77,12 @@ jobs:
           paths:
             - _build
           when: on_success
-      - save_cache:
-          name: Save plts for dialyzer cache
-          key: v2-lab_permission_rule-plts-cache-{{ .Branch }}
-          paths:
-            - priv/plts
-          when: on_success
+      # - save_cache:
+      #     name: Save plts for dialyzer cache
+      #     key: v2-lab_permission_rule-plts-cache-{{ .Branch }}
+      #     paths:
+      #       - priv/plts
+      #     when: on_success
       - run:
           name: Semantic Release
           command: npx semantic-release
