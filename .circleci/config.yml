@@ -80,9 +80,9 @@ jobs:
           paths:
             - priv/plts
           when: on_success
-      - run:
-          name: Credo checks
-          command: make credo  
+      # - run:
+      #     name: Credo checks
+      #     command: make credo  
       - run:
           name: Semantic Release
           command: npx semantic-release
