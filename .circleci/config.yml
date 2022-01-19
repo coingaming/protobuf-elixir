@@ -85,7 +85,7 @@ jobs:
       #     when: on_success
       - run:
           name: Semantic Release
-          command: npx semantic-release
+          command: npx semantic-release --extends @heathmont/semantic-release-elixir-hex
 
 workflows:
   version: 2

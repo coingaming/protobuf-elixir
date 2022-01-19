@@ -1,8 +1,0 @@
----
-plugins:
-- "@semantic-release/commit-analyzer"
-- "@semantic-release/release-notes-generator"
-- - "@semantic-release/exec"
-  - publishCmd: |
-      echo "${nextRelease.version}" > VERSION && \
-      mix hex.publish --organization coingaming --yes

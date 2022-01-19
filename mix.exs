@@ -1,12 +1,10 @@
 defmodule Protobuf.Mixfile do
   use Mix.Project
 
-  @version "VERSION" |> File.read!() |> String.trim()
-
   def project do
     [
       app: :protobuf,
-      version: @version,
+      version: version(),
       elixir: "~> 1.12",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -23,6 +21,13 @@ defmodule Protobuf.Mixfile do
       mod: {Protobuf.Application, []},
       extra_applications: [:logger]
     ]
+  end
+
+  defp version do
+    case File.read("VERSION") do
+      {:ok, v} -> String.trim(v)
+      {:error, _} -> "0.0.0-development"
+    end
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support", "test/protobuf/protoc/proto_gen"]
