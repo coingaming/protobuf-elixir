@@ -1,3 +1,11 @@
+## [0.12.1](https://github.com/coingaming/protobuf-elixir/compare/v0.12.0...v0.12.1) (2024-04-10)
+
+
+### Bug Fixes
+
+* early release ([b719ff5](https://github.com/coingaming/protobuf-elixir/commit/b719ff526660b1d790928a4bdba5bd3419a8f51a))
+* early release (format) ([e142dfb](https://github.com/coingaming/protobuf-elixir/commit/e142dfb3eb887ec12252e2c13a0a05d2b82058a9))
+
 # Changelog
 
 ## v0.12.0
